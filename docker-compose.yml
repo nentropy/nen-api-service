@@ -1,0 +1,94 @@
+version: "3.8"
+
+services:
+  app:
+    image: api-service:latest
+    container_name: nen-api-service
+    restart: unless-stopped
+    networks:
+      - app-network
+    secrets:
+      - rabbitmq_default_user
+      - rabbitmq_default_pass
+      - redis_host
+      - redis_port
+      - redis_password
+      - portkey_api_key
+      - openai_api_key
+      - anthropic_api_key
+      - langsmith_api_key
+      - langsmith_project
+      - langchain_handler
+      - openai_virtual_key
+      - anthropic_virtual_key
+    environment:
+      # Non-sensitive environment variables
+      LOG_LEVEL: "info"
+      APP_ENV: "production"
+    volumes:
+      - /run/secrets:/run/secrets:ro # Mount secrets as read-only
+    ports:
+      - "8080:8080" # Expose app on port 8080 (adjust as needed)
+    depends_on:
+      - rabbitmq
+      - redis
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    networks:
+      - app-network
+    ports:
+      - "15672:15672" # RabbitMQ management UI
+      - "5672:5672"   # RabbitMQ messaging port
+    environment:
+      RABBITMQ_DEFAULT_USER_FILE: /run/secrets/rabbitmq_default_user
+      RABBITMQ_DEFAULT_PASS_FILE: /run/secrets/rabbitmq_default_pass
+    secrets:
+      - rabbitmq_default_user
+      - rabbitmq_default_pass
+
+  redis:
+    image: redis:6.2
+    container_name: redis
+    restart: unless-stopped
+    networks:
+      - app-network
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--requirepass", "/run/secrets/redis_password"]
+    secrets:
+      - redis_password
+
+networks:
+  app-network:
+    driver: bridge
+
+secrets:
+  rabbitmq_default_user:
+    external: true
+  rabbitmq_default_pass:
+    external: true
+  redis_host:
+    external: true
+  redis_port:
+    external: true
+  redis_password:
+    external: true
+  portkey_api_key:
+    external: true
+  openai_api_key:
+    external: true
+  anthropic_api_key:
+    external: true
+  langsmith_api_key:
+    external: true
+  langsmith_project:
+    external: true
+  langchain_handler:
+    external: true
+  openai_virtual_key:
+    external: true
+  anthropic_virtual_key:
+    external: true
