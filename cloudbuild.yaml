@@ -1,0 +1,42 @@
+steps:
+  # Step 1: Code Linting
+  - name: 'gcr.io/cloud-builders/npm'
+    entrypoint: 'npm'
+    args: ['run', 'lint']
+
+  # Step 2: Run Unit Tests
+  - name: 'gcr.io/cloud-builders/npm'
+    entrypoint: 'npm'
+    args: ['run', 'test']
+
+  # Step 3: Build Docker Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t',
+      'australia-southeast2-docker.pkg.dev/nencore-dev/api-service-0x0/api-service-0x0:${SHORT_SHA}',
+      '.'
+    ]
+
+  # Step 4: Push Docker Image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push',
+      'australia-southeast2-docker.pkg.dev/nencore-dev/api-service-0x0/api-service-0x0:${SHORT_SHA}'
+    ]
+
+  # Step 5: Deploy to Cloud Run (Optional)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: [
+      'run',
+      'deploy',
+      'SERVICE-NAME',
+      '--image',
+      'australia-southeast2-docker.pkg.dev/nencore-dev/api-service-0x0/api-service-0x0:${SHORT_SHA}',
+      '--platform',
+      'managed',
+      '--region',
+      'REGION',
+      '--allow-unauthenticated'
+      ]
